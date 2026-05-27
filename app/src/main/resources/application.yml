@@ -33,7 +33,21 @@ app:
   storage:
     upload-dir: uploads
     upload-path: /images
-  
+  cors:
+    allowed-origin-patterns:
+      - http://localhost:*
+      - http://127.0.0.1:*
+    allowed-methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+      - OPTIONS
+    allowed-headers:
+      - "*"
+    allow-credentials: true
+    max-age: 3600
 
 server:
   base-url: http://localhost
