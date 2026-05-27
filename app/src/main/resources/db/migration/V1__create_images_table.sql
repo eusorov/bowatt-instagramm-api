@@ -4,7 +4,7 @@ CREATE TABLE images (
     stored_filename VARCHAR(255) NOT NULL,
     content_type VARCHAR(127) NOT NULL,
     size_bytes BIGINT NOT NULL,
-    title VARCHAR(2200),
+    title VARCHAR(255),
     created_at TIMESTAMP NOT NULL
 );
 

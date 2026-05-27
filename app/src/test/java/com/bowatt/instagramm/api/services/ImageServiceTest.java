@@ -107,6 +107,21 @@ class ImageServiceTest {
     }
 
     @Test
+    void uploadRejectsTitleLongerThan255Characters() {
+        MockMultipartFile file =
+                new MockMultipartFile(
+                        "file", "photo.jpg", "image/jpeg", "jpeg-content".getBytes(StandardCharsets.UTF_8));
+        String longTitle = "a".repeat(256);
+
+        ImageUploadException ex =
+                assertThrows(
+                        ImageUploadException.class,
+                        () -> imageService.upload(file, longTitle, Set.of()));
+
+        assertEquals("Title must be at most 255 characters", ex.getMessage());
+    }
+
+    @Test
     void uploadAcceptsNullTags() throws Exception {
         MockMultipartFile file =
                 new MockMultipartFile(

@@ -88,6 +88,10 @@ public class ImageService {
             throw new ImageUploadException("Tags must be at most 10");
         }
 
+        if (title != null && title.length() > 255) {
+            throw new ImageUploadException("Title must be at most 255 characters");
+        }
+
         ImageContentType imageContentType =
                 ImageContentType.fromMediaType(file.getContentType())
                         .orElseThrow(
