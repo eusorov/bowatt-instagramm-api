@@ -12,7 +12,11 @@ User can get also a list of tags (get /api/tags).
 - persistence of image blob is inside application / container and is configurable via env: application.yml: app.storage.upload-dir
 - the image serving path is configurable via application.yml: app.storage.upload-path
 - There is a Dockerfile with docker-compose file, which start both mysql and app. But it is also possible to start them separately.
+- API documentation is automatically with swagger, use of springdoc lib 
 
+## Out of scope
+- authentification: all users can anonymously make requests (auth is not set)
+- security for react UI: all clients can send requests (JWT token not set) 
 
 
 ## Stack
@@ -24,7 +28,6 @@ User can get also a list of tags (get /api/tags).
 | HTTP | **Spring Web MVC** — JSON REST (`spring-boot-starter-webmvc`) |
 | Build | **Gradle** (wrapper) |
 | Persistence | **MySQL**, **Spring Data JPA**, **Flyway** (`src/main/resources/db/migration`) |
-| Security | **Spring Security** (stateless), **JWT** (**JJWT**)|
 | Object storage | is internally in the application |
 | API docs | **springdoc-openapi** — `/v3/api-docs`, **Swagger UI** at `/swagger-ui.html` |
 | Other | **Spring Actuator** (health), **nullaway**, **JSpecify** (NPE handling) ** |
@@ -33,6 +36,9 @@ User can get also a list of tags (get /api/tags).
 
 - Base path: **`/api/...`**
 - Version header: **`API-Version`** (optional; defaults to **`1.00`** when omitted). Controllers are mapped at version **`1.00`**.
+- Documentation UI: **`http://localhost:8080/swagger-ui/index.html`**
+- Documentation JSON: **`http://localhost:8080/v3/api-docs`**
+- Documentation YML: **`http://localhost:8080/v3/api-docs.yml`**
 
 ## Local development
 
