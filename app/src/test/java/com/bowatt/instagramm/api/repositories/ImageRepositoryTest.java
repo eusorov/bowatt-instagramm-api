@@ -106,14 +106,14 @@ class ImageRepositoryTest {
         imageRepository.save(
                 newImage(
                         "both-2.jpg",
-                        "both-2.jpg.jpg",
+                        "1234567890both-2.jpg",
                         "another beach and sunset",
                         Set.of(beachTag, sunsetTag),
                         CREATED_AT_3.plusSeconds(1)));
         imageRepository.save(
                 newImage(
                         "both-3.jpg",
-                        "both-3.jpg.jpg",
+                        "1234567890both-3.jpg",
                         "yet another beach and sunset",
                         Set.of(beachTag, sunsetTag),
                         CREATED_AT_3.plusSeconds(2)));
@@ -146,6 +146,75 @@ class ImageRepositoryTest {
         Image image = page.getContent().getFirst();
         assertTrue(Hibernate.isInitialized(image.getTags()));
         assertEquals(Set.of("beach", "sunset"), tagNames(image));
+    }
+
+    @Test
+    void findAllByOrderByCreatedAtDescIdDesc_returnsFirstCursorPage() {
+        var firstPage = imageRepository.findAllByOrderByCreatedAtDescIdDesc(PageRequest.of(0, 2));
+
+        assertEquals(2, firstPage.size());
+        assertEquals(CREATED_AT_3, firstPage.get(0).getCreatedAt());
+        assertEquals(CREATED_AT_2, firstPage.get(1).getCreatedAt());
+    }
+
+    @Test
+    void findAllAfterCursorOrderByCreatedAtDescIdDesc_returnsNextCursorPage() {
+        var firstPage = imageRepository.findAllByOrderByCreatedAtDescIdDesc(PageRequest.of(0, 2));
+        Image cursor = firstPage.getLast();
+
+        var secondPage =
+                imageRepository.findAllAfterCursorOrderByCreatedAtDescIdDesc(
+                        cursor.getCreatedAt(), cursor.getId(), PageRequest.of(0, 2));
+
+        assertEquals(1, secondPage.size());
+        assertEquals(beachAndSunsetImage.getId(), secondPage.getFirst().getId());
+    }
+
+    @Test
+    void findByAllTagNamesOrderByCreatedAtDescIdDesc_returnsFirstCursorPage() {
+        imageRepository.save(
+                newImage(
+                        "both-2.jpg",
+                        "1234567890both-2.jpg",
+                        "another beach and sunset",
+                        Set.of(beachTag, sunsetTag),
+                        CREATED_AT_3.plusSeconds(1)));
+
+        var firstPage =
+                imageRepository.findByAllTagNamesOrderByCreatedAtDescIdDesc(
+                        List.of("beach", "sunset"), 2, PageRequest.of(0, 1));
+
+        assertEquals(1, firstPage.size());
+        assertEquals(CREATED_AT_3.plusSeconds(1), firstPage.getFirst().getCreatedAt());
+    }
+
+    @Test
+    void findByAllTagNamesAfterCursorOrderByCreatedAtDescIdDesc_returnsNextCursorPage() {
+        Image newerMatch =
+                imageRepository.save(
+                        newImage(
+                                "both-2.jpg",
+                                "1234567890both-2.jpg",
+                                "another beach and sunset",
+                                Set.of(beachTag, sunsetTag),
+                                CREATED_AT_3.plusSeconds(1)));
+
+        var firstPage =
+                imageRepository.findByAllTagNamesOrderByCreatedAtDescIdDesc(
+                        List.of("beach", "sunset"), 2, PageRequest.of(0, 1));
+        Image cursor = firstPage.getFirst();
+
+        var secondPage =
+                imageRepository.findByAllTagNamesAfterCursorOrderByCreatedAtDescIdDesc(
+                        List.of("beach", "sunset"),
+                        2,
+                        cursor.getCreatedAt(),
+                        cursor.getId(),
+                        PageRequest.of(0, 1));
+
+        assertEquals(1, secondPage.size());
+        assertEquals(beachAndSunsetImage.getId(), secondPage.getFirst().getId());
+        assertTrue(secondPage.getFirst().getId() < newerMatch.getId());
     }
 
     private static Image newImage(
