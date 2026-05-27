@@ -1,9 +1,11 @@
 package com.bowatt.instagramm.api.image;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -124,5 +126,21 @@ class ImageControllerTest {
         mockMvc.perform(get("/api/images/99"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Image not found with id: 99"));
+    }
+
+    @Test
+    void unknownRouteReturnsNotFound() throws Exception {
+        mockMvc.perform(get("/api/unknown"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Resource not found: /api/unknown"));
+    }
+
+    @Test
+    void unsupportedMethodReturnsMethodNotAllowed() throws Exception {
+        mockMvc.perform(delete("/api/images"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.message", containsString("Method not allowed: DELETE")))
+                .andExpect(jsonPath("$.message", containsString("GET")))
+                .andExpect(jsonPath("$.message", containsString("POST")));
     }
 }
