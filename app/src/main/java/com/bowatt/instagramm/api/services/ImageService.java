@@ -221,6 +221,10 @@ public class ImageService {
                 image.getCreatedAt());
     }
 
+    @Cacheable(
+        value = "image",
+        key = "#id"
+    )
     @Transactional(readOnly = true)
     public ImageResponse getImageById(Long id) {
         return imageRepository.findById(id)
