@@ -46,7 +46,7 @@ public class ImageController {
     @Operation(summary = "List images")
     public Page listImages(
             @RequestParam(value = "tags", required = false) Set<String> tags,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC)
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC, page = 0)
                     Pageable pageable) {
         return imageService.list(pageable, tags);
     }

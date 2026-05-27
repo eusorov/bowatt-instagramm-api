@@ -20,12 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(TagController.class)
 @Import({AppConfig.class, WebMvcConfig.class, ImageExceptionHandler.class})
-@TestPropertySource(
-        properties = {
-            "app.storage.upload-dir=/tmp/uploads",
-            "spring.mvc.apiversion.default=1.00",
-            "spring.mvc.apiversion.use.header=API-Version"
-        })
+@TestPropertySource(properties = "app.storage.upload-dir=/tmp/uploads")
 class ApiVersionTest {
 
     @Autowired private MockMvc mockMvc;

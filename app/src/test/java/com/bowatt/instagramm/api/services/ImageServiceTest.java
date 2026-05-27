@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -43,6 +44,7 @@ class ImageServiceTest {
 
     @Mock private ImageRepository imageRepository;
     @Mock private TagRepository tagRepository;
+    @Mock private TagService tagService;
     @Mock private ImageEventPublisher imageEventPublisher;
 
     private ImageService imageService;
@@ -53,6 +55,7 @@ class ImageServiceTest {
                 new ImageService(
                         imageRepository,
                         tagRepository,
+                        tagService,
                         imageEventPublisher,
                         new StorageProperties(tempDir.toString()));
     }
@@ -85,6 +88,21 @@ class ImageServiceTest {
         assertEquals(2, saved.getTags().size());
         assertTrue(Files.exists(tempDir.resolve(saved.getStoredFilename())));
         verify(imageEventPublisher).publishImageCreated();
+        verify(tagService).evictListCache();
+    }
+
+    @Test
+    void uploadDoesNotEvictTagsCacheWhenAllTagsAlreadyExist() throws Exception {
+        MockMultipartFile file =
+                new MockMultipartFile(
+                        "file", "photo.jpg", "image/jpeg", "jpeg-content".getBytes(StandardCharsets.UTF_8));
+
+        when(tagRepository.findByName("beach")).thenReturn(Optional.of(new Tag("beach")));
+        when(imageRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        imageService.upload(file, "title", Set.of("beach"));
+
+        verify(tagService, never()).evictListCache();
     }
 
     @Test

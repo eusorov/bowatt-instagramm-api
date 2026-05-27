@@ -1,0 +1,9 @@
+# Disables @EnableCaching (see CacheConfiguration @Profile("!test")) for slice/unit tests.
+spring:
+  profiles:
+    active: test
+  mvc:
+    apiversion:
+      default: "1.00"
+      use:
+        header: API-Version

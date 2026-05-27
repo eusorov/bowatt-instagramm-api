@@ -32,6 +32,12 @@ spring:
       enabled: true
     livereload:
       enabled: true
+  cache:
+    type: caffeine
+    cache-names: tags,images
+    caffeine:
+      # Without recordStats, Micrometer only registers cache.size (not cache.gets).
+      spec: recordStats
 
 app:
   storage:
@@ -62,3 +68,16 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+
+logging.level:
+  org.hibernate.SQL: DEBUG
+  org.springframework.cache: TRACE
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,caches
+  metrics:
+    enable:
+      cache: true

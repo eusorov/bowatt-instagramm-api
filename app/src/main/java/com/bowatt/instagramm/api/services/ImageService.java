@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.Set;
@@ -27,12 +28,15 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Value;
 import org.jspecify.annotations.Nullable;
+import org.springframework.cache.annotation.Cacheable;  
+import org.springframework.cache.annotation.CacheEvict;
 
 @Service
 public class ImageService {
 
     private final ImageRepository imageRepository;
     private final TagRepository tagRepository;
+    private final TagService tagService;
     private final ImageEventPublisher imageEventPublisher;
     private final Path uploadDirectory;
 
@@ -50,10 +54,12 @@ public class ImageService {
     public ImageService(
             ImageRepository imageRepository,
             TagRepository tagRepository,
+            TagService tagService,
             ImageEventPublisher imageEventPublisher,
             StorageProperties storageProperties) {
         this.imageRepository = imageRepository;
         this.tagRepository = tagRepository;
+        this.tagService = tagService;
         this.imageEventPublisher = imageEventPublisher;
         this.uploadDirectory = Path.of(storageProperties.uploadDir()).toAbsolutePath().normalize();
     }
@@ -62,6 +68,7 @@ public class ImageService {
         return baseUrl + ":" + port;
     }
 
+    @CacheEvict(value = "images", allEntries = true)
     @Transactional
     public ImageResponse upload(MultipartFile file, @Nullable String title, @Nullable Set<String> tags) {
         if (file == null || file.isEmpty() ) {
@@ -113,6 +120,11 @@ public class ImageService {
             throw new ImageUploadException("Failed to store uploaded image", ex);
         }
 
+        TagResolution tagResolution = resolveTags(tags);
+        if (tagResolution.newTagCreated()) {
+            tagService.evictListCache();
+        }
+
         Image saved =
                 imageRepository.save(
                         new Image(
@@ -121,7 +133,7 @@ public class ImageService {
                                 contentType,
                                 file.getSize(),
                                 title,
-                                resolveTags(tags)));
+                                tagResolution.tags()));
 
         ImageResponse response = toResponse(saved);
 
@@ -134,6 +146,14 @@ public class ImageService {
         return response;
     }
 
+    @Cacheable(
+        value = "images",
+        key = "T(java.lang.String).format('%s-%s-%s-%s', " +
+              "#pageable.pageNumber, " +
+              "#pageable.pageSize, " +
+              "#pageable.sort.toString(), " +
+              "(#tags == null ? 'no-tags' : #tags.stream().sorted().toList()))"
+    )
     @Transactional(readOnly = true)
     public Page list(Pageable pageable, @Nullable Set<String> tags) {
         var normalizedTags = normalizeTagNames(tags);
@@ -161,21 +181,30 @@ public class ImageService {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    private Set<Tag> resolveTags(@Nullable Set<String> tagNames) {
+    private TagResolution resolveTags(@Nullable Set<String> tagNames) {
         if (tagNames == null || tagNames.isEmpty()) {
-            return Set.of();
+            return new TagResolution(Set.of(), false);
         }
 
-        return tagNames.stream()
-                .map(String::trim)
-                .filter(name -> !name.isEmpty())
-                .map(
-                        name ->
-                                tagRepository
-                                        .findByName(name)
-                                        .orElseGet(() -> tagRepository.save(new Tag(name))))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        boolean newTagCreated = false;
+        Set<Tag> tags = new LinkedHashSet<>();
+        for (String rawName : tagNames) {
+            String name = rawName.trim();
+            if (name.isEmpty()) {
+                continue;
+            }
+            Optional<Tag> existing = tagRepository.findByName(name);
+            if (existing.isPresent()) {
+                tags.add(existing.get());
+            } else {
+                tags.add(tagRepository.save(new Tag(name)));
+                newTagCreated = true;
+            }
+        }
+        return new TagResolution(tags, newTagCreated);
     }
+
+    private record TagResolution(Set<Tag> tags, boolean newTagCreated) {}
 
     private ImageResponse toResponse(Image image) {
         Set<String> tagNames =
