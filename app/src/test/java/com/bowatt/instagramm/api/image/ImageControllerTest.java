@@ -101,7 +101,7 @@ class ImageControllerTest {
                         1,
                         1);
 
-        when(imageService.list(any(Pageable.class))).thenReturn(page);
+        when(imageService.list(any(Pageable.class), eq(null))).thenReturn(page);
 
         mockMvc.perform(get("/api/images"))
                 .andExpect(status().isOk())
@@ -113,7 +113,7 @@ class ImageControllerTest {
                 .andExpect(jsonPath("$.totalElements").value(1))
                 .andExpect(jsonPath("$.totalPages").value(1));
 
-        verify(imageService).list(any(Pageable.class));
+        verify(imageService).list(any(Pageable.class), eq(null));
     }
 
     @Test

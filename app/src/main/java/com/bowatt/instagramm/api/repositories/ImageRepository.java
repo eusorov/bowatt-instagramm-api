@@ -5,6 +5,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import java.util.Collection;
 import java.util.Optional;
 
 public interface ImageRepository extends JpaRepository<Image, Long> {
@@ -15,4 +18,20 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
 
     @EntityGraph(attributePaths = "tags")
     Page<Image> findAllByOrderByCreatedAtDesc(Pageable pageable);
+
+    @EntityGraph(attributePaths = "tags")
+    @Query(
+            """
+            SELECT i FROM Image i
+            WHERE i.id IN (
+                SELECT i2.id FROM Image i2 JOIN i2.tags t
+                WHERE t.name IN :tagNames
+                GROUP BY i2.id
+                HAVING COUNT(DISTINCT t.name) = :tagCount
+            )
+            """)
+    Page<Image> findByAllTagNames(
+            @Param("tagNames") Collection<String> tagNames,
+            @Param("tagCount") long tagCount,
+            Pageable pageable);
 }

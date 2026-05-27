@@ -95,13 +95,34 @@ public class ImageService {
 
     @Transactional(readOnly = true)
     public Page list(Pageable pageable) {
-        var page = imageRepository.findAllByOrderByCreatedAtDesc(pageable);
+        return list(pageable, null);
+    }
+
+    @Transactional(readOnly = true)
+    public Page list(Pageable pageable, Set<String> tags) {
+        var normalizedTags = normalizeTagNames(tags);
+        var page =
+                normalizedTags.isEmpty()
+                        ? imageRepository.findAllByOrderByCreatedAtDesc(pageable)
+                        : imageRepository.findByAllTagNames(
+                                normalizedTags, normalizedTags.size(), pageable);
         return new Page(
                 page.getContent().stream().map(this::toResponse).toList(),
                 page.getNumber(),
                 page.getSize(),
                 page.getTotalElements(),
                 page.getTotalPages());
+    }
+
+    private Set<String> normalizeTagNames(Set<String> tagNames) {
+        if (tagNames == null || tagNames.isEmpty()) {
+            return Set.of();
+        }
+
+        return tagNames.stream()
+                .map(String::trim)
+                .filter(name -> !name.isEmpty())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     private Set<Tag> resolveTags(Set<String> tagNames) {
