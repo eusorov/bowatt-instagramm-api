@@ -1,4 +1,4 @@
-package com.bowatt.instagramm.api.image;
+package com.bowatt.instagramm.api.web;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -9,8 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.bowatt.instagramm.api.config.AppConfig;
 import com.bowatt.instagramm.api.config.WebMvcConfig;
 import com.bowatt.instagramm.api.services.TagService;
-import com.bowatt.instagramm.api.web.ImageExceptionHandler;
-import com.bowatt.instagramm.api.web.TagController;
 import com.bowatt.instagramm.api.web.dto.TagResponse;
 import java.util.List;
 import org.junit.jupiter.api.Test;

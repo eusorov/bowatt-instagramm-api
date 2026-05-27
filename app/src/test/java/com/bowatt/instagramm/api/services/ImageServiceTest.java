@@ -1,4 +1,4 @@
-package com.bowatt.instagramm.api.image.services;
+package com.bowatt.instagramm.api.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -12,8 +12,6 @@ import com.bowatt.instagramm.api.models.Image;
 import com.bowatt.instagramm.api.models.Tag;
 import com.bowatt.instagramm.api.repositories.ImageRepository;
 import com.bowatt.instagramm.api.repositories.TagRepository;
-import com.bowatt.instagramm.api.services.ImageEventPublisher;
-import com.bowatt.instagramm.api.services.ImageService;
 import com.bowatt.instagramm.api.web.ImageUploadException;
 import com.bowatt.instagramm.api.web.dto.ImageResponse;
 import com.bowatt.instagramm.api.web.dto.ImageResponse.Page;
@@ -24,6 +22,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -60,7 +59,7 @@ class ImageServiceTest {
     void uploadStoresFileAndPersistsMetadata() throws Exception {
         MockMultipartFile file =
                 new MockMultipartFile(
-                        "file", "photo.jpg", "image/jpeg", "jpeg-content".getBytes());
+                        "file", "photo.jpg", "image/jpeg", "jpeg-content".getBytes(StandardCharsets.UTF_8));
 
         when(tagRepository.findByName("beach")).thenReturn(Optional.empty());
         when(tagRepository.findByName("sunset")).thenReturn(Optional.empty());
@@ -116,7 +115,7 @@ class ImageServiceTest {
         when(imageRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, 20)))
                 .thenReturn(new PageImpl<>(List.of(image), PageRequest.of(0, 20), 1));
 
-        Page page = imageService.list(PageRequest.of(0, 20));
+        Page page = imageService.list(PageRequest.of(0, 20), Set.of());
 
         assertEquals(1, page.content().size());
         assertEquals("sunset", page.content().getFirst().title());

@@ -5,6 +5,7 @@ import com.bowatt.instagramm.api.models.Image;
 import com.bowatt.instagramm.api.models.Tag;
 import com.bowatt.instagramm.api.repositories.ImageRepository;
 import com.bowatt.instagramm.api.repositories.TagRepository;
+import com.bowatt.instagramm.api.web.ImageContentType;
 import com.bowatt.instagramm.api.web.ImageNotFoundException;
 import com.bowatt.instagramm.api.web.ImageUploadException;
 import com.bowatt.instagramm.api.web.dto.ImageResponse;
@@ -13,7 +14,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.LinkedHashSet;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -25,9 +30,6 @@ import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class ImageService {
-
-    private static final Set<String> ALLOWED_CONTENT_TYPES =
-            Set.of("image/jpeg", "image/png", "image/webp", "image/gif");
 
     private final ImageRepository imageRepository;
     private final TagRepository tagRepository;
@@ -42,6 +44,8 @@ public class ImageService {
 
     @Value("${app.storage.upload-path}")
     private String uploadPath;
+
+    private static final Logger logger = Logger.getLogger(ImageService.class.getName());
 
     public ImageService(
             ImageRepository imageRepository,
@@ -60,16 +64,32 @@ public class ImageService {
 
     @Transactional
     public ImageResponse upload(MultipartFile file, String title, Set<String> tags) {
-        if (file == null || file.isEmpty()) {
+        if (file == null || file.isEmpty() ) {
             throw new ImageUploadException("Image file is required");
         }
 
-        String contentType = file.getContentType();
-        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
-            throw new ImageUploadException("Unsupported image type. Allowed: JPEG, PNG, WEBP, GIF");
+        if (file.getContentType() == null){
+            throw new ImageUploadException("Image content type is required");
         }
 
-        String extension = extensionForContentType(contentType);
+        if (file.getOriginalFilename() == null || file.getOriginalFilename().isEmpty()) {
+            throw new ImageUploadException("Image original filename is required");
+        }
+
+        if (title == null || title.isEmpty()) {
+            throw new ImageUploadException("Title is required");
+        }
+
+        ImageContentType imageContentType =
+                ImageContentType.fromMediaType(file.getContentType())
+                        .orElseThrow(
+                                () ->
+                                        new ImageUploadException(
+                                                "Unsupported image type. Allowed: "
+                                                        + ImageContentType.allowedLabels()));
+
+        String contentType = imageContentType.mediaType();
+        String extension = imageContentType.extension();
         UUID uuid = UUID.randomUUID();
         String storedFilename = uuid.toString() + extension;
         Path destination = uploadDirectory.resolve(storedFilename);
@@ -94,13 +114,14 @@ public class ImageService {
                                 createdAt));
 
         ImageResponse response = toResponse(saved);
-        imageEventPublisher.publishImageCreated();
-        return response;
-    }
 
-    @Transactional(readOnly = true)
-    public Page list(Pageable pageable) {
-        return list(pageable, null);
+        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> imageEventPublisher.publishImageCreated());
+        try {
+            future.get();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.log(Level.SEVERE, "Failed to publish image created event", e);
+        }
+        return response;
     }
 
     @Transactional(readOnly = true)
@@ -157,19 +178,8 @@ public class ImageService {
                 image.getSizeBytes(),
                 image.getTitle(),
                 tagNames,
-                // get base URL from application.yml
                 this.getFullBaseUrl() + uploadPath + "/" + image.getStoredFilename(),
                 image.getCreatedAt());
-    }
-
-    private static String extensionForContentType(String contentType) {
-        return switch (contentType) {
-            case "image/jpeg" -> ".jpg";
-            case "image/png" -> ".png";
-            case "image/webp" -> ".webp";
-            case "image/gif" -> ".gif";
-            default -> throw new ImageUploadException("Unsupported image type");
-        };
     }
 
     @Transactional(readOnly = true)

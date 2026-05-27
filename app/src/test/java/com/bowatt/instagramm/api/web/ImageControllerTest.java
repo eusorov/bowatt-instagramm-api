@@ -1,4 +1,4 @@
-package com.bowatt.instagramm.api.image;
+package com.bowatt.instagramm.api.web;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
@@ -14,12 +14,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.bowatt.instagramm.api.config.AppConfig;
 import com.bowatt.instagramm.api.config.WebMvcConfig;
 import com.bowatt.instagramm.api.services.ImageService;
-import com.bowatt.instagramm.api.web.ImageController;
-import com.bowatt.instagramm.api.web.ImageExceptionHandler;
-import com.bowatt.instagramm.api.web.ImageNotFoundException;
 import com.bowatt.instagramm.api.web.dto.ImageResponse;
 import com.bowatt.instagramm.api.web.dto.ImageResponse.Page;
 import java.time.Instant;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -62,7 +60,9 @@ class ImageControllerTest {
 
         MockMultipartFile file =
                 new MockMultipartFile(
-                        "file", "photo.jpg", "image/jpeg", "image-bytes".getBytes());
+                        "file", "photo.jpg", 
+                        "image/jpeg", 
+                        "image-bytes".getBytes(StandardCharsets.UTF_8));
 
         mockMvc.perform(
                         multipart("/api/images")
@@ -132,7 +132,7 @@ class ImageControllerTest {
     void unknownRouteReturnsNotFound() throws Exception {
         mockMvc.perform(get("/api/unknown"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Resource not found: /api/unknown"));
+                .andExpect(jsonPath("$.message").value("Resource not found: api/unknown"));
     }
 
     @Test
