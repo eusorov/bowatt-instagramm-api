@@ -13,7 +13,6 @@ import com.bowatt.instagramm.api.web.dto.ImageResponse.Page;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.LinkedHashSet;
@@ -27,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Value;
+import org.jspecify.annotations.Nullable;
 
 @Service
 public class ImageService {
@@ -63,7 +63,7 @@ public class ImageService {
     }
 
     @Transactional
-    public ImageResponse upload(MultipartFile file, String title, Set<String> tags) {
+    public ImageResponse upload(MultipartFile file, @Nullable String title, @Nullable Set<String> tags) {
         if (file == null || file.isEmpty() ) {
             throw new ImageUploadException("Image file is required");
         }
@@ -76,8 +76,16 @@ public class ImageService {
             throw new ImageUploadException("Image original filename is required");
         }
 
-        if (title == null || title.isEmpty()) {
-            throw new ImageUploadException("Title is required");
+        if (file.getOriginalFilename().length() > 255) {
+            throw new ImageUploadException("Original filename must be at most 255 characters");
+        }
+
+        if (file.getSize() > Image.MAX_FILENAME_SIZE) {
+            throw new ImageUploadException("Image size must be less than " + Image.MAX_FILENAME_SIZE + " bytes");
+        }
+
+        if (tags != null && tags.size() > 10) {
+            throw new ImageUploadException("Tags must be at most 10");
         }
 
         ImageContentType imageContentType =
@@ -101,7 +109,6 @@ public class ImageService {
             throw new ImageUploadException("Failed to store uploaded image", ex);
         }
 
-        Instant createdAt = Instant.now();
         Image saved =
                 imageRepository.save(
                         new Image(
@@ -110,8 +117,7 @@ public class ImageService {
                                 contentType,
                                 file.getSize(),
                                 title,
-                                resolveTags(tags),
-                                createdAt));
+                                resolveTags(tags)));
 
         ImageResponse response = toResponse(saved);
 
@@ -125,7 +131,7 @@ public class ImageService {
     }
 
     @Transactional(readOnly = true)
-    public Page list(Pageable pageable, Set<String> tags) {
+    public Page list(Pageable pageable, @Nullable Set<String> tags) {
         var normalizedTags = normalizeTagNames(tags);
         var page =
                 normalizedTags.isEmpty()
@@ -140,7 +146,7 @@ public class ImageService {
                 page.getTotalPages());
     }
 
-    private Set<String> normalizeTagNames(Set<String> tagNames) {
+    private Set<String> normalizeTagNames(@Nullable Set<String> tagNames) {
         if (tagNames == null || tagNames.isEmpty()) {
             return Set.of();
         }
@@ -151,7 +157,7 @@ public class ImageService {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    private Set<Tag> resolveTags(Set<String> tagNames) {
+    private Set<Tag> resolveTags(@Nullable Set<String> tagNames) {
         if (tagNames == null || tagNames.isEmpty()) {
             return Set.of();
         }

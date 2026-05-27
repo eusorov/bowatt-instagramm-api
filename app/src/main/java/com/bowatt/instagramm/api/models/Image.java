@@ -13,28 +13,43 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
+import org.jspecify.annotations.Nullable;
+
 @Entity
 @Table(name = "images")
 public class Image {
 
+    public static final int MAX_FILENAME_SIZE = 1024 * 1024; //1 mb
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "original_filename", nullable = false)
+    @Column(name = "original_filename", nullable = false, length = 255)
+    @Size(max = 255)
     private String originalFilename;
 
-    @Column(name = "stored_filename", nullable = false)
+    @Column(name = "stored_filename", nullable = false, length = 255)
+    @Size(max = 255)
     private String storedFilename;
 
-    @Column(name = "content_type", nullable = false)
+    @Column(name = "content_type", nullable = false, length = 127)
+    @Size(max = 127)
+    @Pattern(regexp = "^image/[a-zA-Z0-9]+$", message = "Invalid content type")
     private String contentType;
 
     @Column(name = "size_bytes", nullable = false)
+    @Min(value = 0)
+    @Max(value = MAX_FILENAME_SIZE)
     private long sizeBytes;
 
-    @Column(length = 2200)
-    private String title;
+    @Column(length = 255)
+    @Size(max = 255)
+    @Nullable private String title;
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
@@ -44,25 +59,27 @@ public class Image {
             name = "image_tags",
             joinColumns = @JoinColumn(name = "image_id"),
             inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    @Size(max = 10)
     private Set<Tag> tags = new HashSet<>();
 
+    @SuppressWarnings("NullAway.Init")
     protected Image() {}
 
+    @SuppressWarnings("NullAway.Init")
     public Image(
             String originalFilename,
             String storedFilename,
             String contentType,
             long sizeBytes,
-            String title,
-            Set<Tag> tags,
-            Instant createdAt) {
+            @Nullable String title,
+            Set<Tag> tags) {
         this.originalFilename = originalFilename;
         this.storedFilename = storedFilename;
         this.contentType = contentType;
         this.sizeBytes = sizeBytes;
         this.title = title;
         this.tags = tags == null ? new HashSet<>() : new HashSet<>(tags);
-        this.createdAt = createdAt;
+        this.createdAt = Instant.now();
     }
 
     public Long getId() {
@@ -85,7 +102,7 @@ public class Image {
         return sizeBytes;
     }
 
-    public String getTitle() {
+    public @Nullable String getTitle() {
         return title;
     }
 

@@ -2,6 +2,8 @@ package com.bowatt.instagramm.api.web;
 
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.web.accept.InvalidApiVersionException;
+import org.springframework.web.accept.MissingApiVersionException;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,9 +11,15 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import jakarta.validation.ConstraintViolationException;
 
 @RestControllerAdvice
 public class ImageExceptionHandler {
+
+    @ExceptionHandler({InvalidApiVersionException.class, MissingApiVersionException.class})
+    ResponseEntity<Map<String, String>> handleApiVersionException(Exception ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", ex.getMessage()));
+    }
 
     @ExceptionHandler(ImageUploadException.class)
     ResponseEntity<Map<String, String>> handleImageUploadException(ImageUploadException ex) {
@@ -21,6 +29,11 @@ public class ImageExceptionHandler {
     @ExceptionHandler(ImageNotFoundException.class)
     ResponseEntity<Map<String, String>> handleImageNotFoundException(ImageNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    ResponseEntity<Map<String, String>> handleConstraintViolationException(ConstraintViolationException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", ex.getMessage()));
     }
 
     @ExceptionHandler(NoResourceFoundException.class)

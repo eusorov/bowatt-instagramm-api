@@ -18,8 +18,10 @@ public class Tag {
     @Column(nullable = false, unique = true, length = 100)
     private String name;
 
+    @SuppressWarnings("NullAway.Init")
     protected Tag() {}
-
+    
+    @SuppressWarnings("NullAway.Init")
     public Tag(String name) {
         this.name = name;
     }

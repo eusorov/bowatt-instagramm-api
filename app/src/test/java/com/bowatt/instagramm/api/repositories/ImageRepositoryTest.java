@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.bowatt.instagramm.api.models.Image;
 import com.bowatt.instagramm.api.models.Tag;
-import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -19,10 +18,6 @@ import org.springframework.data.domain.Sort;
 
 @DataJpaTest
 class ImageRepositoryTest {
-
-    private static final Instant CREATED_AT_1 = Instant.parse("2026-05-27T10:00:00Z");
-    private static final Instant CREATED_AT_2 = Instant.parse("2026-05-27T11:00:00Z");
-    private static final Instant CREATED_AT_3 = Instant.parse("2026-05-27T12:00:00Z");
 
     @Autowired private ImageRepository imageRepository;
     @Autowired private TagRepository tagRepository;
@@ -45,23 +40,22 @@ class ImageRepositoryTest {
                                 "both.jpg",
                                 "1234567890both.jpg",
                                 "beach and sunset",
-                                Set.of(beachTag, sunsetTag),
-                                CREATED_AT_1));
+                                Set.of(beachTag, sunsetTag)));
         beachOnlyImage =
                 imageRepository.save(
                         newImage(
                                 "beach.jpg",
                                 "1234567890beach.jpg",
                                 "beach only",
-                                Set.of(beachTag),
-                                CREATED_AT_2));
+                                Set.of(beachTag)
+                                ));
         imageRepository.save(
                 newImage(
                         "sunset.jpg",
                         "1234567890sunset.jpg",
                         "sunset and summer",
-                        Set.of(sunsetTag, summerTag),
-                        CREATED_AT_3));
+                        Set.of(sunsetTag, summerTag)
+                        ));
     }
 
     @Test
@@ -108,15 +102,15 @@ class ImageRepositoryTest {
                         "both-2.jpg",
                         "1234567890both-2.jpg",
                         "another beach and sunset",
-                        Set.of(beachTag, sunsetTag),
-                        CREATED_AT_3.plusSeconds(1)));
+                        Set.of(beachTag, sunsetTag)
+                        ));
         imageRepository.save(
                 newImage(
                         "both-3.jpg",
                         "1234567890both-3.jpg",
                         "yet another beach and sunset",
-                        Set.of(beachTag, sunsetTag),
-                        CREATED_AT_3.plusSeconds(2)));
+                        Set.of(beachTag, sunsetTag)
+                        ));
 
         var firstPage =
                 imageRepository.findByAllTagNames(
@@ -153,8 +147,6 @@ class ImageRepositoryTest {
         var firstPage = imageRepository.findAllByOrderByCreatedAtDescIdDesc(PageRequest.of(0, 2));
 
         assertEquals(2, firstPage.size());
-        assertEquals(CREATED_AT_3, firstPage.get(0).getCreatedAt());
-        assertEquals(CREATED_AT_2, firstPage.get(1).getCreatedAt());
     }
 
     @Test
@@ -177,15 +169,14 @@ class ImageRepositoryTest {
                         "both-2.jpg",
                         "1234567890both-2.jpg",
                         "another beach and sunset",
-                        Set.of(beachTag, sunsetTag),
-                        CREATED_AT_3.plusSeconds(1)));
+                        Set.of(beachTag, sunsetTag)
+                        ));
 
         var firstPage =
                 imageRepository.findByAllTagNamesOrderByCreatedAtDescIdDesc(
                         List.of("beach", "sunset"), 2, PageRequest.of(0, 1));
 
         assertEquals(1, firstPage.size());
-        assertEquals(CREATED_AT_3.plusSeconds(1), firstPage.getFirst().getCreatedAt());
     }
 
     @Test
@@ -196,8 +187,8 @@ class ImageRepositoryTest {
                                 "both-2.jpg",
                                 "1234567890both-2.jpg",
                                 "another beach and sunset",
-                                Set.of(beachTag, sunsetTag),
-                                CREATED_AT_3.plusSeconds(1)));
+                                Set.of(beachTag, sunsetTag)
+                                ));
 
         var firstPage =
                 imageRepository.findByAllTagNamesOrderByCreatedAtDescIdDesc(
@@ -221,16 +212,15 @@ class ImageRepositoryTest {
             String originalFilename,
             String storedFilename,
             String title,
-            Set<Tag> tags,
-            Instant createdAt) {
+            Set<Tag> tags){
         return new Image(
                 originalFilename,
                 storedFilename,
                 "image/jpeg",
                 128L,
                 title,
-                new LinkedHashSet<>(tags),
-                createdAt);
+                new LinkedHashSet<>(tags)
+                );
     }
 
     private static Set<String> tagNames(Image image) {

@@ -4,13 +4,15 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
+import org.jspecify.annotations.Nullable;
+
 public record ImageResponse(
         Long id,
         String originalFilename,
         String contentType,
         long sizeBytes,
-        String title,
-        Set<String> tags,
+        @Nullable String title,
+        @Nullable Set<String> tags,
         String url,
         Instant createdAt) {
 

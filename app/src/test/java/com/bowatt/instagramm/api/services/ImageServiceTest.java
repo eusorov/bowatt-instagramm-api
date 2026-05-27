@@ -1,6 +1,7 @@
 package com.bowatt.instagramm.api.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -17,12 +18,13 @@ import com.bowatt.instagramm.api.web.dto.ImageResponse;
 import com.bowatt.instagramm.api.web.dto.ImageResponse.Page;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.IntStream;
 import java.nio.charset.StandardCharsets;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -86,6 +88,90 @@ class ImageServiceTest {
     }
 
     @Test
+    void uploadAcceptsNullTitle() throws Exception {
+        MockMultipartFile file =
+                new MockMultipartFile(
+                        "file", "photo.jpg", "image/jpeg", "jpeg-content".getBytes(StandardCharsets.UTF_8));
+
+        when(imageRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ImageResponse response = imageService.upload(file, null, Set.of());
+
+        assertNull(response.title());
+
+        ArgumentCaptor<Image> captor = ArgumentCaptor.forClass(Image.class);
+        verify(imageRepository).save(captor.capture());
+        assertNull(captor.getValue().getTitle());
+        assertTrue(Files.exists(tempDir.resolve(captor.getValue().getStoredFilename())));
+        verify(imageEventPublisher).publishImageCreated();
+    }
+
+    @Test
+    void uploadAcceptsNullTags() throws Exception {
+        MockMultipartFile file =
+                new MockMultipartFile(
+                        "file", "photo.jpg", "image/jpeg", "jpeg-content".getBytes(StandardCharsets.UTF_8));
+
+        when(imageRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ImageResponse response = imageService.upload(file, "sunset", null);
+
+        assertEquals(Set.of(), response.tags());
+
+        ArgumentCaptor<Image> captor = ArgumentCaptor.forClass(Image.class);
+        verify(imageRepository).save(captor.capture());
+        assertTrue(captor.getValue().getTags().isEmpty());
+        assertTrue(Files.exists(tempDir.resolve(captor.getValue().getStoredFilename())));
+        verify(imageEventPublisher).publishImageCreated();
+    }
+
+    @Test
+    void uploadRejectsOriginalFilenameLongerThan255Characters() {
+        String longName = "a".repeat(256);
+        MockMultipartFile file =
+                new MockMultipartFile("file", longName, "image/jpeg", "jpeg-content".getBytes(StandardCharsets.UTF_8));
+
+        ImageUploadException ex =
+                assertThrows(
+                        ImageUploadException.class,
+                        () -> imageService.upload(file, "title", Set.of()));
+
+        assertEquals("Original filename must be at most 255 characters", ex.getMessage());
+    }
+
+    @Test
+    void uploadRejectsFileLargerThanMaxSize() {
+        byte[] oversizedContent = new byte[Image.MAX_FILENAME_SIZE + 1];
+        MockMultipartFile file =
+                new MockMultipartFile("file", "photo.jpg", "image/jpeg", oversizedContent);
+
+        ImageUploadException ex =
+                assertThrows(
+                        ImageUploadException.class,
+                        () -> imageService.upload(file, "title", Set.of()));
+
+        assertEquals(
+                "Image size must be less than " + Image.MAX_FILENAME_SIZE + " bytes",
+                ex.getMessage());
+    }
+
+    @Test
+    void uploadRejectsMoreThanTenTags() {
+        MockMultipartFile file =
+                new MockMultipartFile(
+                        "file", "photo.jpg", "image/jpeg", "jpeg-content".getBytes(StandardCharsets.UTF_8));
+        Set<String> elevenTags =
+                IntStream.range(0, 11).mapToObj(i -> "tag" + i).collect(Collectors.toSet());
+
+        ImageUploadException ex =
+                assertThrows(
+                        ImageUploadException.class,
+                        () -> imageService.upload(file, "title", elevenTags));
+
+        assertEquals("Tags must be at most 10", ex.getMessage());
+    }
+
+    @Test
     void uploadRejectsEmptyFile() {
         MockMultipartFile file =
                 new MockMultipartFile("file", "photo.jpg", "image/jpeg", new byte[0]);
@@ -109,8 +195,8 @@ class ImageServiceTest {
                         "image/jpeg",
                         128L,
                         "sunset",
-                        new LinkedHashSet<>(Set.of(beachTag, summerTag)),
-                        Instant.parse("2026-05-27T10:00:00Z"));
+                        new LinkedHashSet<>(Set.of(beachTag, summerTag))
+                        );
 
         when(imageRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, 20)))
                 .thenReturn(new PageImpl<>(List.of(image), PageRequest.of(0, 20), 1));

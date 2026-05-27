@@ -22,7 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Set;
 
 @RestController
-@RequestMapping("/api/images")
+@RequestMapping(path = "/api/images", version = "1.00")
 @Tag(name = "Images", description = "Instagram image upload API")
 public class ImageController {
 
@@ -37,8 +37,8 @@ public class ImageController {
     @Operation(summary = "Upload an image")
     public ImageResponse uploadImage(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("title") String title,
-            @RequestParam("tags") Set<String> tags) {
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "tags", required = false) Set<String> tags) {
         return imageService.upload(file, title, tags);
     }
 

@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/tags")
+@RequestMapping(path = "/api/tags", version = "1.00")
 @io.swagger.v3.oas.annotations.tags.Tag(name = "Tags", description = "Image tag API")
 public class TagController {
 

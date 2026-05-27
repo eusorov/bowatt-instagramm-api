@@ -38,9 +38,6 @@ dependencies {
 	implementation 'org.flywaydb:flyway-mysql:11.14.1'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 
-	implementation platform('io.github.resilience4j:resilience4j-bom:2.4.0')
-	implementation 'io.github.resilience4j:resilience4j-spring-boot4:2.4.0'
-
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
@@ -61,7 +58,6 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-jdbc-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-	//testImplementation 'org.testcontainers:testcontainers-junit-jupiter:2.0.4'
 	testRuntimeOnly 'com.h2database:h2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
@@ -69,7 +65,7 @@ dependencies {
 // Apply a specific Java toolchain to ease working on different environments.
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 

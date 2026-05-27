@@ -23,6 +23,10 @@ spring:
     enabled: true
   mvc:
     trailing-slash-match: true
+    apiversion:
+      default: "1.00"
+      use:
+        header: API-Version
   devtools:
     restart:
       enabled: true
