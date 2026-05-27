@@ -8,9 +8,10 @@ User can get also a list of tags (get /api/tags).
 
 ## Decisions
 - persistence of image metadata is in MySQL DB
-- the db schema is set via sql and flyway, that db schema has a version
-- persistence of image blob is in application and is configurable via application.yml: app.storage.upload-dir
-- the image serving is via static folder and the path is configurable via application.yml: app.storage.upload-path
+- the db schema is set via sql and flyway, so that db schema has a version
+- persistence of image blob is inside application / container and is configurable via env: application.yml: app.storage.upload-dir
+- the image serving path is configurable via application.yml: app.storage.upload-path
+- There is a Dockerfile with docker-compose file, which start both mysql and app. But it is also possible to start them separately.
 
 
 
@@ -26,7 +27,7 @@ User can get also a list of tags (get /api/tags).
 | Security | **Spring Security** (stateless), **JWT** (**JJWT**)|
 | Object storage | is internally in the application |
 | API docs | **springdoc-openapi** — `/v3/api-docs`, **Swagger UI** at `/swagger-ui.html` |
-| Other | **Spring Actuator** (health), ** nullaway, Jspecify (NPE handling) ** |
+| Other | **Spring Actuator** (health), **nullaway**, **JSpecify** (NPE handling) ** |
 
 ## API conventions
 
@@ -35,15 +36,23 @@ User can get also a list of tags (get /api/tags).
 
 ## Local development
 
-1. Start **MySQL** (for example `docker compose up` from the repo root; default user/database match `application.yml`).
-2. Run the app:
+1. To start onyl **Mysql** service from the repo root:
+```bash
+docker compose up mysql -d
+```
+2. Run the app locally:
 
 ```bash
 ./gradlew bootRun
 ```
 
-4. Run tests — requires PostgreSQL with database **`challengestest`** (see `docker-compose.yml`). **`./gradlew test`** runs Flyway clean on that database first, then the suite.
+2.1 Alternatively you can run both mysql and app inside a container. It will build a Docker image and run inside container.
+```bash
+docker compose up -d
+ ```
 
+
+4. Run tests
 ```bash
 ./gradlew test
 ```
