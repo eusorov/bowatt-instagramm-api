@@ -23,12 +23,20 @@ spring:
     enabled: true
   mvc:
     trailing-slash-match: true
+  devtools:
+    restart:
+      enabled: true
+    livereload:
+      enabled: true
 
 app:
   storage:
     upload-dir: uploads
+    upload-path: /images
+  
 
 server:
+  base-url: http://localhost
   port: 8080
 
 springdoc:

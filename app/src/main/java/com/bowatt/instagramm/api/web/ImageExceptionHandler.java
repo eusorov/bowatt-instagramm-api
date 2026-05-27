@@ -13,4 +13,9 @@ public class ImageExceptionHandler {
     ResponseEntity<Map<String, String>> handleImageUploadException(ImageUploadException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", ex.getMessage()));
     }
+
+    @ExceptionHandler(ImageNotFoundException.class)
+    ResponseEntity<Map<String, String>> handleImageNotFoundException(ImageNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", ex.getMessage()));
+    }
 }

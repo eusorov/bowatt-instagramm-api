@@ -5,6 +5,7 @@ import com.bowatt.instagramm.api.models.Image;
 import com.bowatt.instagramm.api.models.Tag;
 import com.bowatt.instagramm.api.repositories.ImageRepository;
 import com.bowatt.instagramm.api.repositories.TagRepository;
+import com.bowatt.instagramm.api.web.ImageNotFoundException;
 import com.bowatt.instagramm.api.web.ImageUploadException;
 import com.bowatt.instagramm.api.web.dto.ImageResponse;
 import com.bowatt.instagramm.api.web.dto.ImageResponse.Page;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class ImageService {
@@ -31,6 +33,15 @@ public class ImageService {
     private final TagRepository tagRepository;
     private final Path uploadDirectory;
 
+    @Value("${server.base-url}")
+    private String baseUrl;
+
+    @Value("${server.port}")
+    private int port;
+
+    @Value("${app.storage.upload-path}")
+    private String uploadPath;
+
     public ImageService(
             ImageRepository imageRepository,
             TagRepository tagRepository,
@@ -38,6 +49,10 @@ public class ImageService {
         this.imageRepository = imageRepository;
         this.tagRepository = tagRepository;
         this.uploadDirectory = Path.of(storageProperties.uploadDir()).toAbsolutePath().normalize();
+    }
+
+    public String getFullBaseUrl() {
+        return baseUrl + ":" + port;
     }
 
     @Transactional
@@ -116,7 +131,8 @@ public class ImageService {
                 image.getSizeBytes(),
                 image.getTitle(),
                 tagNames,
-                "/api/images/" + image.getId(),
+                // get base URL from application.yml
+                this.getFullBaseUrl() + uploadPath + "/" + image.getStoredFilename(),
                 image.getCreatedAt());
     }
 
@@ -128,5 +144,12 @@ public class ImageService {
             case "image/gif" -> ".gif";
             default -> throw new ImageUploadException("Unsupported image type");
         };
+    }
+
+    @Transactional(readOnly = true)
+    public ImageResponse getImageById(Long id) {
+        return imageRepository.findById(id)
+                .map(this::toResponse)
+                .orElseThrow(() -> new ImageNotFoundException("Image not found with id: " + id));
     }
 }

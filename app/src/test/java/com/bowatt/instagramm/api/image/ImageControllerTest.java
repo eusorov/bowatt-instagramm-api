@@ -9,8 +9,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.bowatt.instagramm.api.config.AppConfig;
+import com.bowatt.instagramm.api.config.WebMvcConfig;
 import com.bowatt.instagramm.api.services.ImageService;
 import com.bowatt.instagramm.api.web.ImageController;
+import com.bowatt.instagramm.api.web.ImageExceptionHandler;
+import com.bowatt.instagramm.api.web.ImageNotFoundException;
 import com.bowatt.instagramm.api.web.dto.ImageResponse;
 import com.bowatt.instagramm.api.web.dto.ImageResponse.Page;
 import java.time.Instant;
@@ -20,12 +24,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Pageable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(ImageController.class)
+@Import({AppConfig.class, WebMvcConfig.class, ImageExceptionHandler.class})
+@TestPropertySource(properties = "app.storage.upload-dir=/tmp/uploads")
 class ImageControllerTest {
 
     @Autowired private MockMvc mockMvc;
@@ -44,7 +52,7 @@ class ImageControllerTest {
                         128L,
                         "sunset",
                         Set.of("beach", "summer"),
-                        "/api/images/" + id,
+                        "/images/photo.jpg",
                         createdAt);
 
         when(imageService.upload(any(), eq("sunset"), eq(Set.of("beach", "summer"))))
@@ -67,7 +75,7 @@ class ImageControllerTest {
                 .andExpect(jsonPath("$.sizeBytes").value(128))
                 .andExpect(jsonPath("$.title").value("sunset"))
                 .andExpect(jsonPath("$.tags.length()").value(2))
-                .andExpect(jsonPath("$.url").value("/api/images/" + id))
+                .andExpect(jsonPath("$.url").value("/images/photo.jpg"))
                 .andExpect(jsonPath("$.createdAt").value("2026-05-27T10:00:00Z"));
 
         verify(imageService).upload(any(), eq("sunset"), eq(Set.of("beach", "summer")));
@@ -86,7 +94,7 @@ class ImageControllerTest {
                                         128L,
                                         "sunset",
                                         Set.of("beach", "summer"),
-                                        "/api/images/1",
+                                        "/images/photo.jpg.jpg",
                                         createdAt)),
                         0,
                         20,
@@ -106,5 +114,15 @@ class ImageControllerTest {
                 .andExpect(jsonPath("$.totalPages").value(1));
 
         verify(imageService).list(any(Pageable.class));
+    }
+
+    @Test
+    void getImageByIdReturnsNotFoundWhenMissing() throws Exception {
+        when(imageService.getImageById(99L))
+                .thenThrow(new ImageNotFoundException("Image not found with id: 99"));
+
+        mockMvc.perform(get("/api/images/99"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Image not found with id: 99"));
     }
 }

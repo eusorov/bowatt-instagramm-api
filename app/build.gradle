@@ -75,6 +75,11 @@ springBoot {
     mainClass = 'com.bowatt.instagramm.api.InstagrammApiApplication'
 }
 
+bootRun {
+    // Pick up application.yml changes from src/main/resources without a full rebuild.
+    sourceResources sourceSets.main
+}
+
 tasks.named('test') {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
