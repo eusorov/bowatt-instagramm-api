@@ -12,6 +12,7 @@ import com.bowatt.instagramm.api.models.Image;
 import com.bowatt.instagramm.api.models.Tag;
 import com.bowatt.instagramm.api.repositories.ImageRepository;
 import com.bowatt.instagramm.api.repositories.TagRepository;
+import com.bowatt.instagramm.api.services.ImageEventPublisher;
 import com.bowatt.instagramm.api.services.ImageService;
 import com.bowatt.instagramm.api.web.ImageUploadException;
 import com.bowatt.instagramm.api.web.dto.ImageResponse;
@@ -41,6 +42,7 @@ class ImageServiceTest {
 
     @Mock private ImageRepository imageRepository;
     @Mock private TagRepository tagRepository;
+    @Mock private ImageEventPublisher imageEventPublisher;
 
     private ImageService imageService;
 
@@ -48,7 +50,10 @@ class ImageServiceTest {
     void setUp() {
         imageService =
                 new ImageService(
-                        imageRepository, tagRepository, new StorageProperties(tempDir.toString()));
+                        imageRepository,
+                        tagRepository,
+                        imageEventPublisher,
+                        new StorageProperties(tempDir.toString()));
     }
 
     @Test
@@ -78,6 +83,7 @@ class ImageServiceTest {
         assertEquals("beach day", saved.getTitle());
         assertEquals(2, saved.getTags().size());
         assertTrue(Files.exists(tempDir.resolve(saved.getStoredFilename())));
+        verify(imageEventPublisher).publishImageCreated();
     }
 
     @Test

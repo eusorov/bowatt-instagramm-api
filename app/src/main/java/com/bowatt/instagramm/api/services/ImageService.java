@@ -31,6 +31,7 @@ public class ImageService {
 
     private final ImageRepository imageRepository;
     private final TagRepository tagRepository;
+    private final ImageEventPublisher imageEventPublisher;
     private final Path uploadDirectory;
 
     @Value("${server.base-url}")
@@ -45,9 +46,11 @@ public class ImageService {
     public ImageService(
             ImageRepository imageRepository,
             TagRepository tagRepository,
+            ImageEventPublisher imageEventPublisher,
             StorageProperties storageProperties) {
         this.imageRepository = imageRepository;
         this.tagRepository = tagRepository;
+        this.imageEventPublisher = imageEventPublisher;
         this.uploadDirectory = Path.of(storageProperties.uploadDir()).toAbsolutePath().normalize();
     }
 
@@ -90,7 +93,9 @@ public class ImageService {
                                 resolveTags(tags),
                                 createdAt));
 
-        return toResponse(saved);
+        ImageResponse response = toResponse(saved);
+        imageEventPublisher.publishImageCreated();
+        return response;
     }
 
     @Transactional(readOnly = true)
