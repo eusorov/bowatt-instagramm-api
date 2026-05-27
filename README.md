@@ -2,7 +2,7 @@
 
 This a mvp backend service which behaves like instagram application.
 
-User can upload images (post /api/images) and gets list of images (get /api/images).
+User can upload images (post /api/uploads) and gets list of images (get /api/images).
 
 User can get also a list of tags (get /api/tags).
 

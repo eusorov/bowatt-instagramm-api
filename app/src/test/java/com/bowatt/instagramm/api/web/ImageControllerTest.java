@@ -65,7 +65,7 @@ class ImageControllerTest {
                         "image-bytes".getBytes(StandardCharsets.UTF_8));
 
         mockMvc.perform(
-                        multipart("/api/images")
+                        multipart("/api/uploads")
                                 .file(file)
                                 .param("title", "sunset")
                                 .param("tags", "beach", "summer")
@@ -140,7 +140,6 @@ class ImageControllerTest {
         mockMvc.perform(delete("/api/images"))
                 .andExpect(status().isMethodNotAllowed())
                 .andExpect(jsonPath("$.message", containsString("Method not allowed: DELETE")))
-                .andExpect(jsonPath("$.message", containsString("GET")))
-                .andExpect(jsonPath("$.message", containsString("POST")));
+                .andExpect(jsonPath("$.message", containsString("GET")));
     }
 }

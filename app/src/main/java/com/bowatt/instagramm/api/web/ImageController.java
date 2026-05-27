@@ -22,7 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.Set;
 
 @RestController
-@RequestMapping(path = "/api/images", version = "1.00")
+@RequestMapping(version = "1.00")
 @Tag(name = "Images", description = "Instagram image upload API")
 public class ImageController {
 
@@ -32,7 +32,7 @@ public class ImageController {
         this.imageService = imageService;
     }
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(path = "/api/uploads", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Upload an image")
     public ImageResponse uploadImage(
@@ -42,7 +42,7 @@ public class ImageController {
         return imageService.upload(file, title, tags);
     }
 
-    @GetMapping
+    @GetMapping("/api/images")
     @Operation(summary = "List images")
     public Page listImages(
             @RequestParam(value = "tags", required = false) Set<String> tags,
@@ -51,7 +51,7 @@ public class ImageController {
         return imageService.list(pageable, tags);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/api/images/{id}")
     @Operation(summary = "Get an image by ID")
     public ImageResponse getImageById(@PathVariable Long id) {
         return imageService.getImageById(id);
