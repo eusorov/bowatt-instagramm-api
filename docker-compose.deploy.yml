@@ -3,3 +3,14 @@ services:
   app:
     image: ${IMAGE_FULL_NAME}
     build: !reset null
+    entrypoint: 
+      - VIRTUAL_HOST=insta.api.usomi.de,insta.api.local
+      - VIRTUAL_PORT=8080
+      - LETSENCRYPT_HOST=insta.api.usomi.de
+    networks:
+      - nginx_proxy_net
+
+# this is external network for nginx proxy which handles SSL termination and routing to the app
+networks:
+  nginx_proxy_net:
+    external: true
