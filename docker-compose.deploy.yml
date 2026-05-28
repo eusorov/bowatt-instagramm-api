@@ -4,6 +4,7 @@ services:
     image: ${IMAGE_FULL_NAME}
     build: !reset null
     environment: 
+      - SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/instagramm
       - VIRTUAL_HOST=insta.api.usomi.de,insta.api.local
       - VIRTUAL_PORT=8080
       - LETSENCRYPT_HOST=insta.api.usomi.de
