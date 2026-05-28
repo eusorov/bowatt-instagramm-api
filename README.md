@@ -69,3 +69,11 @@ docker compose up -d
 ```bash
 ./gradlew test
 ```
+
+5. Docker
+There is a Docker file for building an image. There is a docker-compose.yml file for starting the mysql and the app inside a container.
+
+For running the app on a [VPS insta.api.usomi.de](https://insta.api.usomi.de) with Letsencrypt there is docker-compose.deploy.yml, which overrides a few parameters, like mysql url, because it is installed locally on VPS. And it provides parameters for letsencrypt service. 
+
+6. Github Actions
+There are github actions to run tests, create image and deploy to VPS.
