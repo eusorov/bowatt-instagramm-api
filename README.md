@@ -20,6 +20,7 @@ User can get also a list of tags (get /api/tags).
 ## Out of scope
 - authentification: all users can anonymously make requests (auth is not set)
 - security for react UI: all clients can send requests (JWT token not set) 
+- delete images and tags
 
 
 ## Stack
