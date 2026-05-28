@@ -231,7 +231,7 @@ class ImageServiceTest {
                         new LinkedHashSet<>(Set.of(beachTag, summerTag))
                         );
 
-        when(imageRepository.findAllByOrderByCreatedAtDesc(PageRequest.of(0, 20)))
+        when(imageRepository.findAllByOrderByCreatedAtDescIdDesc(PageRequest.of(0, 20)))
                 .thenReturn(new PageImpl<>(List.of(image), PageRequest.of(0, 20), 1));
 
         Page page = imageService.list(PageRequest.of(0, 20), Set.of());

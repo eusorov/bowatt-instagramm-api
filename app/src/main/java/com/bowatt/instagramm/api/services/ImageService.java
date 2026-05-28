@@ -159,9 +159,8 @@ public class ImageService {
         var normalizedTags = normalizeTagNames(tags);
         var page =
                 normalizedTags.isEmpty()
-                        ? imageRepository.findAllByOrderByCreatedAtDesc(pageable)
-                        : imageRepository.findByAllTagNames(
-                                normalizedTags, normalizedTags.size(), pageable);
+                        ? imageRepository.findAllByOrderByCreatedAtDescIdDesc(pageable)
+                        : imageRepository.findByAllTagNamesOrderByCreatedAtDescIdDesc(normalizedTags, normalizedTags.size(), pageable);
         return new Page(
                 page.getContent().stream().map(this::toResponse).toList(),
                 page.getNumber(),
