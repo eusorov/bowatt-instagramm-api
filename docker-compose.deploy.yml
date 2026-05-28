@@ -4,12 +4,16 @@ services:
     image: ${IMAGE_FULL_NAME}
     build: !reset null
     environment: 
-      - SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/instagramm
+      #override mysql url to use local installed mysql instance
+      - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/instagramm
+      # use letsencrypt for ssl
       - VIRTUAL_HOST=insta.api.usomi.de,insta.api.local
       - VIRTUAL_PORT=8080
       - LETSENCRYPT_HOST=insta.api.usomi.de
     networks:
       - nginx_proxy_net
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # for using local mysql
 
 # this is external network for nginx proxy which handles SSL termination and routing to the app
 networks:
