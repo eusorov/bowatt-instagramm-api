@@ -6,9 +6,11 @@ User can upload images (post /api/uploads) and gets list of images (get /api/ima
 
 User can get also a list of tags (get /api/tags).
 
-## Decisions
+## Features and Decisions
+- user can upload images via POST api/uploads
 - persistence of image metadata is in MySQL DB
-- client (UI) gets a paginageable list of images 
+- user can see images and the client (UI) gets a paginageable list: GET api/images
+- user can see tags via GET api/tags 
 - the db schema is set via sql and flyway, so that db schema has a version
 - persistence of image blob is inside application / container and is configurable via env: application.yml: app.storage.upload-dir
 - the image serving path is configurable via application.yml: app.storage.upload-path
