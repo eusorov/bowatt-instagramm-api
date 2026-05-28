@@ -1,0 +1,127 @@
+name: Build Docker
+
+on:
+  push:
+  pull_request:
+
+env:
+  IMAGE_NAME: ${{ github.event.repository.name }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        ports:
+          - "3306:3306"
+        env:
+          MYSQL_DATABASE: instagrammtest
+          MYSQL_USER: bowatt
+          MYSQL_PASSWORD: password
+          MYSQL_ROOT_PASSWORD: password
+    env:
+      SPRING_DATASOURCE_TEST_URL: jdbc:mysql://localhost:3306/instagrammtest
+      SPRING_DATASOURCE_TEST_USERNAME: bowatt
+      SPRING_DATASOURCE_TEST_PASSWORD: password
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Run tests
+        run: ./gradlew test
+
+  docker:
+    name: Build Docker Image
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    outputs:
+      branch: ${{ steps.branch.outputs.branch }}
+      tag: ${{ steps.image.outputs.tag }}
+      image: ${{ steps.image.outputs.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Determine branch
+        id: branch
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BRANCH="${{ github.base_ref }}"
+          else
+            BRANCH="${{ github.ref_name }}"
+          fi
+          echo "Branch: $BRANCH"
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+
+      - name: Set image
+        id: image
+        run: |
+          BRANCH="${{ steps.branch.outputs.branch }}"
+          TAG=$([ "$BRANCH" = "master" ] && echo "latest" || echo "$BRANCH")
+          IMAGE="ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${TAG}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Pull previous image for cache
+        run: |
+          docker pull ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest || true
+          docker pull ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:buildcache || true
+
+      - name: Build and push image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.image.outputs.image }}
+          cache-from: |
+            type=registry,ref=ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:buildcache
+            type=gha
+          cache-to: |
+            type=registry,ref=ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+            type=gha,mode=max,multistage=true
+  deploy:
+    name: Deploy
+    needs: docker
+    uses: ./.github/workflows/docker-deploy.yml
+    with:
+      IMAGE_FULL_NAME: ${{ needs.docker.outputs.image }}
+      IMAGE_SHORT_NAME: ${{ github.event.repository.name }}
+    secrets:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
