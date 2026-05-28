@@ -14,7 +14,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.Pattern;
 import org.jspecify.annotations.Nullable;
@@ -23,8 +22,6 @@ import org.jspecify.annotations.Nullable;
 @Table(name = "images")
 public class Image {
 
-    public static final int MAX_FILENAME_SIZE = 1024 * 1024; //1 mb
-    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -44,7 +41,6 @@ public class Image {
 
     @Column(name = "size_bytes", nullable = false)
     @Min(value = 0)
-    @Max(value = MAX_FILENAME_SIZE)
     private long sizeBytes;
 
     @Column(length = 255)

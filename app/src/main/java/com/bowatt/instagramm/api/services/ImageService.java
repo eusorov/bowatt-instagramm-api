@@ -90,10 +90,6 @@ public class ImageService {
             throw new ImageUploadException("Original filename must be at most 255 characters");
         }
 
-        if (file.getSize() > Image.MAX_FILENAME_SIZE) {
-            throw new ImageUploadException("Image size must be less than " + Image.MAX_FILENAME_SIZE + " bytes");
-        }
-
         if (tags != null && tags.size() > 10) {
             throw new ImageUploadException("Tags must be at most 10");
         }

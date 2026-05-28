@@ -174,22 +174,6 @@ class ImageServiceTest {
     }
 
     @Test
-    void uploadRejectsFileLargerThanMaxSize() {
-        byte[] oversizedContent = new byte[Image.MAX_FILENAME_SIZE + 1];
-        MockMultipartFile file =
-                new MockMultipartFile("file", "photo.jpg", "image/jpeg", oversizedContent);
-
-        ImageUploadException ex =
-                assertThrows(
-                        ImageUploadException.class,
-                        () -> imageService.upload(file, "title", Set.of()));
-
-        assertEquals(
-                "Image size must be less than " + Image.MAX_FILENAME_SIZE + " bytes",
-                ex.getMessage());
-    }
-
-    @Test
     void uploadRejectsMoreThanTenTags() {
         MockMultipartFile file =
                 new MockMultipartFile(
