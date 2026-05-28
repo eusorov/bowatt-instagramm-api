@@ -7,9 +7,10 @@ User can upload images (post /api/uploads) and gets list of images (get /api/ima
 User can get also a list of tags (get /api/tags).
 
 ## Features and Decisions
-- user can upload images via POST api/uploads
+- user can upload images via POST api/uploads (max size 10MB)
 - persistence of image metadata is in MySQL DB
 - user can see images and the client (UI) gets a paginageable list: GET api/images
+- user can filter images by tags (AND condition between tags)
 - user can see tags via GET api/tags 
 - the db schema is set via sql and flyway, so that db schema has a version
 - persistence of image blob is inside application / container and is configurable via env: application.yml: app.storage.upload-dir
