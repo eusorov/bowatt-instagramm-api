@@ -3,7 +3,7 @@ services:
   app:
     image: ${IMAGE_FULL_NAME}
     build: !reset null
-    entrypoint: 
+    environment: 
       - VIRTUAL_HOST=insta.api.usomi.de,insta.api.local
       - VIRTUAL_PORT=8080
       - LETSENCRYPT_HOST=insta.api.usomi.de
