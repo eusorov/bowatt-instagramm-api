@@ -65,6 +65,9 @@ public class ImageService {
     }
 
     public String getFullBaseUrl() {
+        if (baseUrl.startsWith("https")) {
+            return baseUrl;
+        }
         return baseUrl + ":" + port;
     }
 

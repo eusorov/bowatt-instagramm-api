@@ -7,7 +7,6 @@ services:
       #override mysql url to use local installed mysql instance
       - SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/instagramm
       - SERVER_BASE_URL=https://insta.api.usomi.de
-      - SERVER_PORT=443
       # use letsencrypt for ssl
       - VIRTUAL_HOST=insta.api.usomi.de,insta.api.local
       - VIRTUAL_PORT=8080

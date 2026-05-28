@@ -36,6 +36,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class ImageServiceTest {
@@ -243,5 +244,21 @@ class ImageServiceTest {
         assertEquals(20, page.size());
         assertEquals(1, page.totalElements());
         assertEquals(1, page.totalPages());
+    }
+
+    @Test
+    void getFullBaseUrl_appendsPortForHttpBaseUrl() {
+        ReflectionTestUtils.setField(imageService, "baseUrl", "http://localhost");
+        ReflectionTestUtils.setField(imageService, "port", 8080);
+
+        assertEquals("http://localhost:8080", imageService.getFullBaseUrl());
+    }
+
+    @Test
+    void getFullBaseUrl_returnsHttpsBaseUrlWithoutPort() {
+        ReflectionTestUtils.setField(imageService, "baseUrl", "https://insta.api.usomi.de");
+        ReflectionTestUtils.setField(imageService, "port", 443);
+
+        assertEquals("https://insta.api.usomi.de", imageService.getFullBaseUrl());
     }
 }
