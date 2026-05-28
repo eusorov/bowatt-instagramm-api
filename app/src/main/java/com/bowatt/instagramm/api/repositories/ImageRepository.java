@@ -21,10 +21,6 @@ public interface ImageRepository extends JpaRepository<Image, Long> {
 
     /**
      * Find images by all tag names (AND condition) and order by created at and id in descending order
-     * @param tagNames
-     * @param tagCount
-     * @param pageable
-     * @return
      */
     @EntityGraph(attributePaths = "tags")
     @Query(
