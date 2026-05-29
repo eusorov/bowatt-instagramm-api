@@ -13,12 +13,9 @@ import com.bowatt.instagramm.api.web.dto.ImageResponse.Page;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.LinkedHashSet;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -30,6 +27,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.jspecify.annotations.Nullable;
 import org.springframework.cache.annotation.Cacheable;  
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.scheduling.annotation.Async;
 
 @Service
 public class ImageService {
@@ -136,13 +134,14 @@ public class ImageService {
 
         ImageResponse response = toResponse(saved);
 
-        CompletableFuture<Void> future = CompletableFuture.runAsync(() -> imageEventPublisher.publishImageCreated());
-        try {
-            future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            logger.log(Level.SEVERE, "Failed to publish image created event", e);
-        }
+        publishImageCreatedEvent();
         return response;
+    }
+
+    @Async
+    public void publishImageCreatedEvent() {
+        logger.info("Publishing image created event");
+        imageEventPublisher.publishImageCreated();
     }
 
     @Cacheable(

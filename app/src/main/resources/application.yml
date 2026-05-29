@@ -71,8 +71,8 @@ springdoc:
     path: /swagger-ui.html
 
 logging.level:
-  org.hibernate.SQL: DEBUG
-  org.springframework.cache: TRACE
+  org.hibernate.SQL: INFO
+  org.springframework.cache: INFO
 
 management:
   endpoints:

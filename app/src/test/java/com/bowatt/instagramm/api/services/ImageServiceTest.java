@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -53,12 +54,13 @@ class ImageServiceTest {
     @BeforeEach
     void setUp() {
         imageService =
-                new ImageService(
-                        imageRepository,
-                        tagRepository,
-                        tagService,
-                        imageEventPublisher,
-                        new StorageProperties(tempDir.toString()));
+                spy(
+                        new ImageService(
+                                imageRepository,
+                                tagRepository,
+                                tagService,
+                                imageEventPublisher,
+                                new StorageProperties(tempDir.toString())));
     }
 
     @Test
@@ -88,7 +90,7 @@ class ImageServiceTest {
         assertEquals("beach day", saved.getTitle());
         assertEquals(2, saved.getTags().size());
         assertTrue(Files.exists(tempDir.resolve(saved.getStoredFilename())));
-        verify(imageEventPublisher).publishImageCreated();
+        verify(imageService).publishImageCreatedEvent();
         verify(tagService).evictListCache();
     }
 
@@ -122,7 +124,7 @@ class ImageServiceTest {
         verify(imageRepository).save(captor.capture());
         assertNull(captor.getValue().getTitle());
         assertTrue(Files.exists(tempDir.resolve(captor.getValue().getStoredFilename())));
-        verify(imageEventPublisher).publishImageCreated();
+        verify(imageService).publishImageCreatedEvent();
     }
 
     @Test
@@ -156,6 +158,13 @@ class ImageServiceTest {
         verify(imageRepository).save(captor.capture());
         assertTrue(captor.getValue().getTags().isEmpty());
         assertTrue(Files.exists(tempDir.resolve(captor.getValue().getStoredFilename())));
+        verify(imageService).publishImageCreatedEvent();
+    }
+
+    @Test
+    void publishImageCreatedEvent_publishesToPublisher() {
+        imageService.publishImageCreatedEvent();
+
         verify(imageEventPublisher).publishImageCreated();
     }
 
