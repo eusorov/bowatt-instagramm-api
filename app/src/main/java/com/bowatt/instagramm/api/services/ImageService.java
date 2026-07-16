@@ -11,6 +11,7 @@ import com.bowatt.instagramm.api.web.ImageUploadException;
 import com.bowatt.instagramm.api.web.dto.ImageResponse;
 import com.bowatt.instagramm.api.web.dto.ImageResponse.Page;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.logging.Logger;
@@ -28,6 +29,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.cache.annotation.Cacheable;  
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Async;
+import org.apache.tika.Tika;
 
 @Service
 public class ImageService {
@@ -96,13 +98,7 @@ public class ImageService {
             throw new ImageUploadException("Title must be at most 255 characters");
         }
 
-        ImageContentType imageContentType =
-                ImageContentType.fromMediaType(file.getContentType())
-                        .orElseThrow(
-                                () ->
-                                        new ImageUploadException(
-                                                "Unsupported image type. Allowed: "
-                                                        + ImageContentType.allowedLabels()));
+        ImageContentType imageContentType = verifyImageContentType(file);
 
         String contentType = imageContentType.mediaType();
         String extension = imageContentType.extension();
@@ -136,6 +132,24 @@ public class ImageService {
 
         publishImageCreatedEvent();
         return response;
+    }
+
+    public ImageContentType verifyImageContentType(MultipartFile file) {
+        String mimeType;
+        ImageContentType imageContentType;
+        try (InputStream inputStream = file.getInputStream()){
+            Tika tika = new Tika();
+            mimeType = tika.detect(inputStream, file.getOriginalFilename());
+
+            imageContentType = ImageContentType.fromMediaType(mimeType)
+                .orElseThrow(
+                    () -> new ImageUploadException("Unsupported image type. Allowed: "+ ImageContentType.allowedLabels()));      
+
+        } catch (IOException e) {
+            throw new ImageUploadException("Wrong content Type");
+        }
+        
+        return imageContentType;
     }
 
     @Async

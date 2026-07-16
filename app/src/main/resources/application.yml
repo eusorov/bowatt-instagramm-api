@@ -34,7 +34,7 @@ spring:
       enabled: true
   cache:
     type: caffeine
-    cache-names: tags,images
+    cache-names: tags,images,image
     caffeine:
       # Without recordStats, Micrometer only registers cache.size (not cache.gets).
       spec: recordStats
