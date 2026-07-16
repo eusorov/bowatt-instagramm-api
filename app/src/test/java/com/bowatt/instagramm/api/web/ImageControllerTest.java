@@ -3,6 +3,7 @@ package com.bowatt.instagramm.api.web;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -20,6 +21,7 @@ import java.time.Instant;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Pageable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,6 +83,124 @@ class ImageControllerTest {
                 .andExpect(jsonPath("$.createdAt").value("2026-05-27T10:00:00Z"));
 
         verify(imageService).upload(any(), eq("sunset"), eq(Set.of("beach", "summer")));
+    }
+
+    @Test
+    void uploadImageRejectsEmptyFile() throws Exception {
+        MockMultipartFile file =
+                new MockMultipartFile("file", "photo.jpg", "image/jpeg", new byte[0]);
+
+        mockMvc.perform(
+                        multipart("/api/uploads")
+                                .file(file)
+                                .param("title", "title")
+                                .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Image file is required"));
+
+        verify(imageService, never()).upload(any(), any(), any());
+    }
+
+    @Test
+    void uploadImageRejectsMissingContentType() throws Exception {
+        MockMultipartFile file =
+                new MockMultipartFile(
+                        "file",
+                        "photo.jpg",
+                        null,
+                        "image-bytes".getBytes(StandardCharsets.UTF_8));
+
+        mockMvc.perform(
+                        multipart("/api/uploads")
+                                .file(file)
+                                .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Image content type is required"));
+
+        verify(imageService, never()).upload(any(), any(), any());
+    }
+
+    @Test
+    void uploadImageRejectsMissingOriginalFilename() throws Exception {
+        MockMultipartFile file =
+                new MockMultipartFile(
+                        "file",
+                        null,
+                        "image/jpeg",
+                        "image-bytes".getBytes(StandardCharsets.UTF_8));
+
+        mockMvc.perform(
+                        multipart("/api/uploads")
+                                .file(file)
+                                .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Image original filename is required"));
+
+        verify(imageService, never()).upload(any(), any(), any());
+    }
+
+    @Test
+    void uploadImageRejectsOriginalFilenameLongerThan255Characters() throws Exception {
+        String longName = "a".repeat(256);
+        MockMultipartFile file =
+                new MockMultipartFile(
+                        "file",
+                        longName,
+                        "image/jpeg",
+                        "image-bytes".getBytes(StandardCharsets.UTF_8));
+
+        mockMvc.perform(
+                        multipart("/api/uploads")
+                                .file(file)
+                                .param("title", "title")
+                                .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest())
+                .andExpect(
+                        jsonPath("$.message")
+                                .value("Original filename must be at most 255 characters"));
+
+        verify(imageService, never()).upload(any(), any(), any());
+    }
+
+    @Test
+    void uploadImageRejectsTitleLongerThan255Characters() throws Exception {
+        MockMultipartFile file =
+                new MockMultipartFile(
+                        "file",
+                        "photo.jpg",
+                        "image/jpeg",
+                        "image-bytes".getBytes(StandardCharsets.UTF_8));
+
+        mockMvc.perform(
+                        multipart("/api/uploads")
+                                .file(file)
+                                .param("title", "a".repeat(256))
+                                .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Title must be at most 255 characters"));
+
+        verify(imageService, never()).upload(any(), any(), any());
+    }
+
+    @Test
+    void uploadImageRejectsMoreThanTenTags() throws Exception {
+        MockMultipartFile file =
+                new MockMultipartFile(
+                        "file",
+                        "photo.jpg",
+                        "image/jpeg",
+                        "image-bytes".getBytes(StandardCharsets.UTF_8));
+        String[] elevenTags = IntStream.range(0, 11).mapToObj(i -> "tag" + i).toArray(String[]::new);
+
+        mockMvc.perform(
+                        multipart("/api/uploads")
+                                .file(file)
+                                .param("tags", elevenTags)
+                                .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Tags must be at most 10"));
+
+        verify(imageService, never()).upload(any(), any(), any());
     }
 
     @Test

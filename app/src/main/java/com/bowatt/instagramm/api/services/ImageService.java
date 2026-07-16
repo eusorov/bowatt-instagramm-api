@@ -19,6 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -74,30 +75,6 @@ public class ImageService {
     @CacheEvict(value = "images", allEntries = true)
     @Transactional
     public ImageResponse upload(MultipartFile file, @Nullable String title, @Nullable Set<String> tags) {
-        if (file == null || file.isEmpty() ) {
-            throw new ImageUploadException("Image file is required");
-        }
-
-        if (file.getContentType() == null){
-            throw new ImageUploadException("Image content type is required");
-        }
-
-        if (file.getOriginalFilename() == null || file.getOriginalFilename().isEmpty()) {
-            throw new ImageUploadException("Image original filename is required");
-        }
-
-        if (file.getOriginalFilename().length() > 255) {
-            throw new ImageUploadException("Original filename must be at most 255 characters");
-        }
-
-        if (tags != null && tags.size() > 10) {
-            throw new ImageUploadException("Tags must be at most 10");
-        }
-
-        if (title != null && title.length() > 255) {
-            throw new ImageUploadException("Title must be at most 255 characters");
-        }
-
         ImageContentType imageContentType = verifyImageContentType(file);
 
         String contentType = imageContentType.mediaType();
@@ -121,7 +98,7 @@ public class ImageService {
         Image saved =
                 imageRepository.save(
                         new Image(
-                                file.getOriginalFilename(),
+                                Objects.requireNonNull(file.getOriginalFilename()),
                                 storedFilename,
                                 contentType,
                                 file.getSize(),

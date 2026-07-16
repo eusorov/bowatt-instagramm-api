@@ -3,9 +3,13 @@ package com.bowatt.instagramm.api.web;
 import com.bowatt.instagramm.api.services.ImageService;
 import com.bowatt.instagramm.api.web.dto.ImageResponse;
 import com.bowatt.instagramm.api.web.dto.ImageResponse.Page;
+import com.bowatt.instagramm.api.web.dto.ImageUploadRequest;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import java.util.Objects;
+import java.util.Set;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -18,8 +22,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-import java.util.Set;
 
 @RestController
 @RequestMapping(version = "1.00")
@@ -35,11 +37,11 @@ public class ImageController {
     @PostMapping(path = "/api/uploads", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Upload an image")
-    public ImageResponse uploadImage(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "title", required = false) String title,
-            @RequestParam(value = "tags", required = false) Set<String> tags) {
-        return imageService.upload(file, title, tags);
+    public ImageResponse uploadImage(@Valid ImageUploadRequest request) {
+        return imageService.upload(
+                Objects.requireNonNull(request.getFile()),
+                request.getTitle(),
+                request.getTags());
     }
 
     @GetMapping("/api/images")

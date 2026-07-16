@@ -28,9 +28,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.IntStream;
 import java.nio.charset.StandardCharsets;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -145,21 +143,6 @@ class ImageServiceTest {
     }
 
     @Test
-    void uploadRejectsTitleLongerThan255Characters() {
-        MockMultipartFile file =
-                new MockMultipartFile(
-                        "file", "photo.jpg", "image/jpeg", JPEG_BYTES);
-        String longTitle = "a".repeat(256);
-
-        ImageUploadException ex =
-                assertThrows(
-                        ImageUploadException.class,
-                        () -> imageService.upload(file, longTitle, Set.of()));
-
-        assertEquals("Title must be at most 255 characters", ex.getMessage());
-    }
-
-    @Test
     void uploadAcceptsNullTags() throws Exception {
         MockMultipartFile file =
                 new MockMultipartFile(
@@ -183,49 +166,6 @@ class ImageServiceTest {
         imageService.publishImageCreatedEvent();
 
         verify(imageEventPublisher).publishImageCreated();
-    }
-
-    @Test
-    void uploadRejectsOriginalFilenameLongerThan255Characters() {
-        String longName = "a".repeat(256);
-        MockMultipartFile file =
-                new MockMultipartFile("file", longName, "image/jpeg", JPEG_BYTES);
-
-        ImageUploadException ex =
-                assertThrows(
-                        ImageUploadException.class,
-                        () -> imageService.upload(file, "title", Set.of()));
-
-        assertEquals("Original filename must be at most 255 characters", ex.getMessage());
-    }
-
-    @Test
-    void uploadRejectsMoreThanTenTags() {
-        MockMultipartFile file =
-                new MockMultipartFile(
-                        "file", "photo.jpg", "image/jpeg", JPEG_BYTES);
-        Set<String> elevenTags =
-                IntStream.range(0, 11).mapToObj(i -> "tag" + i).collect(Collectors.toSet());
-
-        ImageUploadException ex =
-                assertThrows(
-                        ImageUploadException.class,
-                        () -> imageService.upload(file, "title", elevenTags));
-
-        assertEquals("Tags must be at most 10", ex.getMessage());
-    }
-
-    @Test
-    void uploadRejectsEmptyFile() {
-        MockMultipartFile file =
-                new MockMultipartFile("file", "photo.jpg", "image/jpeg", new byte[0]);
-
-        ImageUploadException ex =
-                assertThrows(
-                        ImageUploadException.class,
-                        () -> imageService.upload(file, "title", Set.of()));
-
-        assertEquals("Image file is required", ex.getMessage());
     }
 
     @Test
