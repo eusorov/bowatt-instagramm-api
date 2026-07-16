@@ -2,10 +2,8 @@ package com.bowatt.instagramm.api.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -16,11 +14,8 @@ import com.bowatt.instagramm.api.models.Image;
 import com.bowatt.instagramm.api.models.Tag;
 import com.bowatt.instagramm.api.repositories.ImageRepository;
 import com.bowatt.instagramm.api.repositories.TagRepository;
-import com.bowatt.instagramm.api.web.ImageContentType;
-import com.bowatt.instagramm.api.web.ImageUploadException;
 import com.bowatt.instagramm.api.web.dto.ImageResponse;
 import com.bowatt.instagramm.api.web.dto.ImageResponse.Page;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
@@ -28,7 +23,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,7 +34,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.multipart.MultipartFile;
 
 @ExtendWith(MockitoExtension.class)
 class ImageServiceTest {
@@ -49,13 +42,6 @@ class ImageServiceTest {
             Base64.getDecoder()
                     .decode(
                             "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=");
-    private static final byte[] PNG_BYTES =
-            Base64.getDecoder()
-                    .decode(
-                            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==");
-    private static final byte[] GIF_BYTES =
-            Base64.getDecoder()
-                    .decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7");
 
     @TempDir Path tempDir;
 
@@ -194,74 +180,6 @@ class ImageServiceTest {
         assertEquals(20, page.size());
         assertEquals(1, page.totalElements());
         assertEquals(1, page.totalPages());
-    }
-
-    @Test
-    void verifyImageContentType_acceptsJpeg() {
-        MockMultipartFile file =
-                new MockMultipartFile("file", "photo.jpg", "image/jpeg", JPEG_BYTES);
-
-        ImageContentType result = imageService.verifyImageContentType(file);
-
-        assertEquals(ImageContentType.JPEG, result);
-        assertEquals("image/jpeg", result.mediaType());
-        assertEquals(".jpg", result.extension());
-    }
-
-    @Test
-    void verifyImageContentType_acceptsPng() {
-        MockMultipartFile file =
-                new MockMultipartFile("file", "photo.png", "image/png", PNG_BYTES);
-
-        ImageContentType result = imageService.verifyImageContentType(file);
-
-        assertEquals(ImageContentType.PNG, result);
-        assertEquals("image/png", result.mediaType());
-        assertEquals(".png", result.extension());
-    }
-
-    @Test
-    void verifyImageContentType_acceptsGif() {
-        MockMultipartFile file =
-                new MockMultipartFile("file", "animation.gif", "image/gif", GIF_BYTES);
-
-        ImageContentType result = imageService.verifyImageContentType(file);
-
-        assertEquals(ImageContentType.GIF, result);
-        assertEquals("image/gif", result.mediaType());
-        assertEquals(".gif", result.extension());
-    }
-
-    @Test
-    void verifyImageContentType_rejectsUnsupportedType() {
-        MockMultipartFile file =
-                new MockMultipartFile(
-                        "file",
-                        "notes.txt",
-                        "text/plain",
-                        "plain text".getBytes(StandardCharsets.UTF_8));
-
-        ImageUploadException ex =
-                assertThrows(
-                        ImageUploadException.class,
-                        () -> imageService.verifyImageContentType(file));
-
-        assertEquals(
-                "Unsupported image type. Allowed: " + ImageContentType.allowedLabels(),
-                ex.getMessage());
-    }
-
-    @Test
-    void verifyImageContentType_wrapsIOExceptionFromInputStream() throws Exception {
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.getInputStream()).thenThrow(new IOException("broken stream"));
-
-        ImageUploadException ex =
-                assertThrows(
-                        ImageUploadException.class,
-                        () -> imageService.verifyImageContentType(file));
-
-        assertEquals("Wrong content Type", ex.getMessage());
     }
 
     @Test

@@ -17,7 +17,7 @@ import com.bowatt.instagramm.api.services.ImageService;
 import com.bowatt.instagramm.api.web.dto.ImageResponse;
 import com.bowatt.instagramm.api.web.dto.ImageResponse.Page;
 import java.time.Instant;
-import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -35,6 +35,11 @@ import org.springframework.test.web.servlet.MockMvc;
 @Import({AppConfig.class, WebMvcConfig.class, ImageExceptionHandler.class})
 @TestPropertySource(properties = "app.storage.upload-dir=/tmp/uploads")
 class ImageControllerTest {
+
+    private static final byte[] JPEG_BYTES =
+            Base64.getDecoder()
+                    .decode(
+                            "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=");
 
     @Autowired private MockMvc mockMvc;
 
@@ -59,10 +64,7 @@ class ImageControllerTest {
                 .thenReturn(response);
 
         MockMultipartFile file =
-                new MockMultipartFile(
-                        "file", "photo.jpg", 
-                        "image/jpeg", 
-                        "image-bytes".getBytes(StandardCharsets.UTF_8));
+                new MockMultipartFile("file", "photo.jpg", "image/jpeg", JPEG_BYTES);
 
         mockMvc.perform(
                         multipart("/api/uploads")

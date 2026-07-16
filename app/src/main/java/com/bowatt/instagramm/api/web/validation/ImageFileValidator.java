@@ -1,7 +1,12 @@
 package com.bowatt.instagramm.api.web.validation;
 
+import com.bowatt.instagramm.api.web.ImageContentType;
+import com.bowatt.instagramm.api.web.ImageUploadException;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import java.io.IOException;
+import java.io.InputStream;
+import org.apache.tika.Tika;
 import org.springframework.web.multipart.MultipartFile;
 
 public class ImageFileValidator implements ConstraintValidator<ValidImageFile, MultipartFile> {
@@ -27,7 +32,28 @@ public class ImageFileValidator implements ConstraintValidator<ValidImageFile, M
             return reject(context, "Original filename must be at most 255 characters");
         }
 
-        return true;
+        try {
+            verifyImageContentType(file);
+            return true;
+        } catch (ImageUploadException ex) {
+            return reject(context, ex.getMessage());
+        }
+    }
+
+    public static ImageContentType verifyImageContentType(MultipartFile file) {
+        try (InputStream inputStream = file.getInputStream()) {
+            Tika tika = new Tika();
+            String mimeType = tika.detect(inputStream, file.getOriginalFilename());
+
+            return ImageContentType.fromMediaType(mimeType)
+                    .orElseThrow(
+                            () ->
+                                    new ImageUploadException(
+                                            "Unsupported image type. Allowed: "
+                                                    + ImageContentType.allowedLabels()));
+        } catch (IOException e) {
+            throw new ImageUploadException("Wrong content Type");
+        }
     }
 
     private boolean reject(ConstraintValidatorContext context, String message) {
