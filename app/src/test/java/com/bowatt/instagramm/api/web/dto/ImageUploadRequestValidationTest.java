@@ -103,6 +103,7 @@ class ImageUploadRequestValidationTest {
     }
 
     @Test
+    @SuppressWarnings("NullAway")
     void rejectsNullFile() {
         var request = new ImageUploadRequest(null, "title", Set.of());
 

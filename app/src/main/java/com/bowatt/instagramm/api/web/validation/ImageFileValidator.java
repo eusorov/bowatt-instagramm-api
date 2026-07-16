@@ -45,12 +45,7 @@ public class ImageFileValidator implements ConstraintValidator<ValidImageFile, M
             Tika tika = new Tika();
             String mimeType = tika.detect(inputStream, file.getOriginalFilename());
 
-            return ImageContentType.fromMediaType(mimeType)
-                    .orElseThrow(
-                            () ->
-                                    new ImageUploadException(
-                                            "Unsupported image type. Allowed: "
-                                                    + ImageContentType.allowedLabels()));
+            return ImageContentType.fromMediaType(mimeType, true).get();
         } catch (IOException e) {
             throw new ImageUploadException("Wrong content Type");
         }

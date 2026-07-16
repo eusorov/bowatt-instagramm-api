@@ -32,6 +32,10 @@ public enum ImageContentType {
     }
 
     public static Optional<ImageContentType> fromMediaType(String contentType) {
+        return fromMediaType(contentType, false);
+    }
+
+    public static Optional<ImageContentType> fromMediaType(String contentType, boolean throwException) {
         if (contentType == null) {
             return Optional.empty();
         }
@@ -40,6 +44,12 @@ public enum ImageContentType {
             if (type.mediaType.equals(contentType)) {
                 return Optional.of(type);
             }
+        }
+
+        if (throwException) {
+            throw new ImageUploadException(
+                    "Unsupported image type. Allowed: "
+                            + ImageContentType.allowedLabels());
         }
         return Optional.empty();
     }

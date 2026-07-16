@@ -74,7 +74,7 @@ public class ImageService {
     @CacheEvict(value = "images", allEntries = true)
     @Transactional
     public ImageResponse upload(MultipartFile file, @Nullable String title, @Nullable Set<String> tags) {
-        ImageContentType imageContentType = ImageFileValidator.verifyImageContentType(file);
+        ImageContentType imageContentType = ImageContentType.fromMediaType(file.getContentType(), true).get();
 
         String contentType = imageContentType.mediaType();
         String extension = imageContentType.extension();
