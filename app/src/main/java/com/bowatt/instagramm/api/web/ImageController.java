@@ -39,9 +39,9 @@ public class ImageController {
     @Operation(summary = "Upload an image")
     public ImageResponse uploadImage(@Valid ImageUploadRequest request) {
         return imageService.upload(
-                Objects.requireNonNull(request.getFile()),
-                request.getTitle(),
-                request.getTags());
+                Objects.requireNonNull(request.file()),
+                request.title(),
+                request.tags());
     }
 
     @GetMapping("/api/images")
